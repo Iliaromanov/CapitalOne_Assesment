@@ -6,3 +6,130 @@ I wrote a class that implements methods to find the max reward points for the mo
 
 The `transactionParserCDKApp` directory contains the AWS CDK code I used to deploy an AWS Lambda + API Gateway based API to utilize the aforementioned class through the web, using HTTP POST requests.
 
+## API
+I deployed an AWS Lambda + API Gateway based API to accept HTTP POST requests providing a dictionary of transactions for a month in the format specified by the assesment documentation and return max reward points for the month and max reward points per transaction information.
+
+URL: `https://ycyx8q4m03.execute-api.us-east-2.amazonaws.com/prod/`
+
+methods: `POST`
+
+Sample Request Body:
+```javascript
+{"transactions": 
+  {
+    "T01": {"date": "2021-05-01", "merchant_code" : "sportcheck", "amount_cents": 21000},
+    "T02": {"date": "2021-05-02", "merchant_code" : "sportcheck", "amount_cents": 8700},
+    "T03": {"date": "2021-05-03", "merchant_code" : "tim_hortons", "amount_cents": 323},
+    "T04": {"date": "2021-05-04", "merchant_code" : "tim_hortons", "amount_cents": 1267},
+    "T05": {"date": "2021-05-05", "merchant_code" : "tim_hortons", "amount_cents": 2116},
+    "T06": {"date": "2021-05-06", "merchant_code" : "tim_hortons", "amount_cents": 2211},
+    "T07": {"date": "2021-05-07", "merchant_code" : "subway", "amount_cents": 1853},
+    "T08": {"date": "2021-05-08", "merchant_code" : "subway", "amount_cents": 2153},
+    "T09": {"date": "2021-05-09", "merchant_code" : "sportcheck", "amount_cents": 7326},
+    "T10": {"date": "2021-05-10", "merchant_code" : "tim_hortons", "amount_cents": 1321}
+  }
+}
+```
+Sample Response:
+```javascript
+{
+    "max_reward_per_transaction": [
+        [
+            400,
+            {
+                "rules_used": [
+                    3,
+                    3
+                ]
+            }
+        ],
+        [
+            200,
+            {
+                "rules_used": [
+                    3
+                ]
+            }
+        ],
+        [
+            3,
+            {
+                "rules_used": [
+                    7
+                ]
+            }
+        ],
+        [
+            12,
+            {
+                "rules_used": [
+                    7
+                ]
+            }
+        ],
+        [
+            21,
+            {
+                "rules_used": [
+                    7
+                ]
+            }
+        ],
+        [
+            22,
+            {
+                "rules_used": [
+                    7
+                ]
+            }
+        ],
+        [
+            18,
+            {
+                "rules_used": [
+                    7
+                ]
+            }
+        ],
+        [
+            21,
+            {
+                "rules_used": [
+                    7
+                ]
+            }
+        ],
+        [
+            225,
+            {
+                "rules_used": [
+                    6,
+                    6,
+                    6
+                ]
+            }
+        ],
+        [
+            13,
+            {
+                "rules_used": [
+                    7
+                ]
+            }
+        ]
+    ],
+    "rewards_for_month": {
+        "max_reward": 1472,
+        "rules_used": [
+            1,
+            2,
+            3,
+            3,
+            6,
+            6,
+            6,
+            7
+        ]
+    }
+}
+```
