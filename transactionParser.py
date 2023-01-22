@@ -90,7 +90,7 @@ DEFAULT_RULES = [
 ]
 
 
-class TransactionParser:
+class RewardPointsCalculator:
     def __init__(
         self, 
         transactions: Dict[str, Dict[str, Any]],
@@ -109,7 +109,10 @@ class TransactionParser:
 
     def parse_transactions(self) -> None:
         """
-        parses transactions by combining 
+        Parses raw transactions by summing values with same
+        merchant_code and putting unknown merchants into 'other'
+
+        sets self._parsed_transactions attribute
         """
         # init all merchants to 0
         transactions = {
@@ -138,7 +141,6 @@ class TransactionParser:
             list of tuples -- (max_reward_for_transaction, [rules_used])
                             index of each tuple denotes the transaction number
         """
-        print(list(self._raw_transactions.values()))
         rewards = []
         for transaction in list(self._raw_transactions.values()):
             # add transaction for transsaction["merchant_code"]
@@ -198,12 +200,6 @@ class TransactionParser:
         reward = 0
 
         while total_remainig >= 1:
-            print("====================================================================================")
-            print("transactions: ", transactions)
-            print("rules_used: ", rules_used)
-            print("reward: ", reward)
-            print("remainig: ", total_remainig)
-
             # check if only Rule 7 is applicable
             # if so, then add all remaining transaction amounts
             #  into the 'other' category and apply Rule 7
@@ -234,15 +230,12 @@ class TransactionParser:
                 continue
             # 2 x Rule 4
             elif self._rule_applicable(transactions, self._rules[3]["Reqs"]) == 2:
-                print("applied rule 4")
                 reward += self._rules[3]["Points"] * 2
                 rules_used.append(4)
                 rules_used.append(4)
                 total_remainig -= self._apply_rule(
                     transactions, self._rules[3]["Reqs"], 2
                 )
-                print("transactions: ", transactions)
-                print("total_remainig: ", total_remainig)
                 continue
             # Rule 3 
             elif self._rule_applicable(transactions, self._rules[2]["Reqs"]):
@@ -370,31 +363,3 @@ class TransactionParser:
         
         # using int cast on floats in Python is the same as floor
         return int(transactions[MerchantCode.OTHER.value])
-
-
-
-sample = {
-"T01": {"date": "2021-05-01", "merchant_code" : "sportcheck", "amount_cents": 21000}, "T02": {"date": "2021-05-02", "merchant_code" : "sportcheck", "amount_cents": 8700}, "T03": {"date": "2021-05-03", "merchant_code" : "tim_hortons", "amount_cents": 323}, "T04": {"date": "2021-05-04", "merchant_code" : "tim_hortons", "amount_cents": 1267}, "T05": {"date": "2021-05-05", "merchant_code" : "tim_hortons", "amount_cents": 2116}, "T06": {"date": "2021-05-06", "merchant_code" : "tim_hortons", "amount_cents": 2211}, "T07": {"date": "2021-05-07", "merchant_code" : "subway", "amount_cents": 1853}, "T08": {"date": "2021-05-08", "merchant_code" : "subway", "amount_cents": 2153}, "T09": {"date": "2021-05-09", "merchant_code" : "sportcheck", "amount_cents": 7326}, "T10": {"date": "2021-05-10", "merchant_code" : "tim_hortons", "amount_cents": 1321}
-}
-
-tricky = {
-    "T01": {"date": "2021-05-01", "merchant_code" : "sportcheck", "amount_cents": 7500},
-    "T02": {"date": "2021-05-10", "merchant_code" : "tim_hortons", "amount_cents": 2000},
-    "T03": {"date": "2021-05-10", "merchant_code" : "subway", "amount_cents": 2000},
-} # 1x Rule 3 gives less than 2x Rule 4
-
-t = TransactionParser(sample)
-
-# t.parse_transactions()
-
-
-"""
-
-TRY tricky WITHOUT TIMS CUS IT SEEMED LIKE IT BROKE
-
-"""
-t.maximum_reward_for_month()
-t.maximum_reward_per_transaction()
-
-
-# print("rule applicable: ", t._rule_applicable(DEFAULT_RULES[0]["Reqs"]))
