@@ -1,5 +1,4 @@
 from enum import Enum
-from math import floor
 from typing import Any, Dict, List, Set, Tuple
 
 
@@ -117,9 +116,6 @@ class TransactionParser:
             merchant_code: 0.0 for merchant_code in self._defined_merchants
         }
 
-        print("trans: ", self._raw_transactions)
-        print("raw trans: ", list(self._raw_transactions.values()))
-
         for transaction in list(self._raw_transactions.values()):
             merchant = transaction["merchant_code"]
             if merchant not in self._defined_merchants:
@@ -130,98 +126,209 @@ class TransactionParser:
             self._total_transaction_amount += amount
             transactions[merchant] += amount
 
-        print("paresed transactions: ", transactions)
-
         self._parsed_transactions = transactions
 
 
-    def maximum_reward_per_transaction(self) -> Dict[str, int]:
+    def maximum_reward_per_transaction(self) -> List[Tuple[int, List[int]]]:
         """
-        """
+        Compute max reward points per transaction based on
+        self._raw_transactions
 
-    def maximum_reward_for_month_backtrack(self) -> int:
+        Returns:
+            list of tuples -- (max_reward_for_transaction, [rules_used])
+                            index of each tuple denotes the transaction number
         """
+        print(list(self._raw_transactions.values()))
+        rewards = []
+        for transaction in list(self._raw_transactions.values()):
+            # add transaction for transsaction["merchant_code"]
+            #  and a 0$ transaction for 'other' in case Rule 7 required
+            parsed_transaction = {
+                transaction[
+                    "merchant_code"
+                ]: transaction["amount_cents"] / 100,
+                MerchantCode.OTHER.value: 0
+            }
+
+            # check if need to merge to 'other' for Rule 7
+            if self._must_merge_to_other(parsed_transaction):
+                rule_7_reward = self._merge_to_other(parsed_transaction)
+                rewards.append((rule_7_reward, [7]))
+                continue
+
+            # iterate over all rules from highest reward to lowest
+            #  break when an applicable rule is reached
+            for rule_num, rule in enumerate(self._rules):
+                reqs = rule["Reqs"]
+                num_times_applicable = self._rule_applicable(
+                    parsed_transaction, reqs
+                )   
+                if num_times_applicable:
+                    # rules are 0 indexed
+                    rewards.append((
+                        rule["Points"] * num_times_applicable,
+                        # use rule number num_times_applicable times
+                        [rule_num + 1] * num_times_applicable
+                    ))
+                    break
+
+        print("Rewards: ", rewards)
+
+        return rewards
+
+    def maximum_reward_for_month(self) -> Tuple[int, List[int]]:
+        """
+        Compute maximum reward for month based on self._parsed_transactions
 
         * This current algo is only applicable to the DEFAULT_RULES
            above (given in assesment), but this method can be updated
            to return max reward points for different sets of rules
+
+        Returns:
+            tuple -- (max_reward: int, rules_used: List[int])
         """
-        # I will be taking the backtracking approach for this algo: 
-        # attempt to apply every rule and check which gives the max 
-        max_reward = 0
-        max_rules_used = []
 
-        def backtrack(transactions: Dict[str, float], rules_used: List[str], total_amount: int, reward: int):
-            nonlocal max_reward
-            nonlocal max_rules_used
+        # Will use the following logic (for DEFAULT_RULES):
+        #  Rule 1 > Rule 2 > 2*Rule 4 > Rule 3 > Rule 6 > Rule 7
+        #  Rule 5 should never be used since Rule 6 + Rule 7 can be used
+        #   to produce bigger reward instead
+        total_remainig = self._total_transaction_amount
+        transactions = self._parsed_transactions.copy()
+        rules_used = []
+        reward = 0
 
-            print("============================================= Starting new Backtrack")
+        while total_remainig >= 1:
+            print("====================================================================================")
             print("transactions: ", transactions)
-            print("rules: ", rules_used)
-            print("total amount: ", total_amount)
+            print("rules_used: ", rules_used)
             print("reward: ", reward)
+            print("remainig: ", total_remainig)
 
-            # special case: check if any rules other than Rule 7 can be applied
-            #  if not, then put everything into 'other' and calculate left over
-            #  reward points using Rule 7
+            # check if only Rule 7 is applicable
+            # if so, then add all remaining transaction amounts
+            #  into the 'other' category and apply Rule 7
             if self._must_merge_to_other(transactions):
-                print("MUST MERGE TO OTHER")
-                for merchant, amount in transactions.items():
-                    if merchant != MerchantCode.OTHER.value:
-                        transactions[MerchantCode.OTHER.value] += amount
-                amount = floor(transactions[MerchantCode.OTHER.value])
-                total_amount -= amount
+                amount = self._merge_to_other(transactions)
+                total_remainig -= amount
                 reward += amount
                 rules_used.append(7) # will only append 7 once to keep it clean
+                break
+            
+            # Note that self._rules is 0 indexed
 
-            if total_amount < 1:
-                print("FOUND AMOUNT < 1")
-                print("reward: ", reward)
-                if max_reward < reward:
-                    max_reward = reward
-                    max_rules_used = rules_used
-                return
+            # Rule 1
+            if self._rule_applicable(transactions, self._rules[0]["Reqs"]):
+                reward += self._rules[0]["Points"]
+                rules_used.append(1)
+                total_remainig -= self._apply_rule(
+                    transactions, self._rules[0]["Reqs"]
+                )
+                continue
+            # Rule 2
+            elif self._rule_applicable(transactions, self._rules[1]["Reqs"]):
+                reward += self._rules[1]["Points"]
+                rules_used.append(2)
+                total_remainig -= self._apply_rule(
+                    transactions, self._rules[1]["Reqs"]
+                )
+                continue
+            # 2 x Rule 4
+            elif self._rule_applicable(transactions, self._rules[3]["Reqs"]) == 2:
+                print("applied rule 4")
+                reward += self._rules[3]["Points"] * 2
+                rules_used.append(4)
+                rules_used.append(4)
+                total_remainig -= self._apply_rule(
+                    transactions, self._rules[3]["Reqs"], 2
+                )
+                print("transactions: ", transactions)
+                print("total_remainig: ", total_remainig)
+                continue
+            # Rule 3 
+            elif self._rule_applicable(transactions, self._rules[2]["Reqs"]):
+                reward += self._rules[2]["Points"]
+                rules_used.append(3)
+                total_remainig -= self._apply_rule(
+                    transactions, self._rules[2]["Reqs"]
+                )
+                continue
+            # Rule 6
+            elif self._rule_applicable(transactions, self._rules[5]["Reqs"]):
+                reward += self._rules[5]["Points"]
+                rules_used.append(6)
+                total_remainig -= self._apply_rule(
+                    transactions, self._rules[5]["Reqs"]
+                )
+                continue
+        
+        print("Maximum Reward Points For Month: ", reward)
+        print("Rules Used: ", rules_used)
 
-            for rule_num, rule in enumerate(self._rules):
-                rule_num += 1 # rules are 0 indexed
-                print("trying rule: ", rule_num)
-                reqs = rule["Reqs"]
-                transactions_copy = transactions.copy()
-                new_total = total_amount
-                new_reward = reward + rule["Points"]
-                new_rules_used = rules_used.copy() + [rule_num]
-                if self._rule_applicable(transactions_copy, reqs):
-                    print("new_reward: ", new_reward)
-                    print("rule: ", rule_num, " applicable")
-                    new_total -= self._apply_rule(transactions_copy, reqs)
-                    backtrack(transactions_copy, new_rules_used, new_total, new_reward)
-
-        backtrack(self._parsed_transactions, [], self._total_transaction_amount, 0)
-
-        print("max_reward:", max_reward)
-        print("rules_used:", max_rules_used)
-
-        return max_reward
+        return (reward, rules_used)
 
 
-    def _rule_applicable(self, transactions: Dict[str, float], reqs: List[Tuple[str, int]]) -> bool:
+    @staticmethod
+    def _rule_applicable(
+        transactions: Dict[str, float], 
+        reqs: List[Tuple[str, int]]
+    ) -> int:
         """
-        checks if rule is applicable
+        Checks how many times Rule with requirements == reqs
+        can be applied
+
+        Args:
+            transactions -- a dict of parsed transactions 
+                          (same format as self._parsed_transactions)
+            reqs -- a list of requirements 
+                    (see DEFAULT_RULES[i]["Reqs"] above for format)
+        
+        Returns:
+            int -- number of times rule can be applied
         """
+        # counts of how many times a req can be applied to a specific
+        #  merchant within transaction
+        number_of_applications = []
         for merchant, amount in reqs:
-            if transactions[merchant] < amount:
-                return False
-        return True
+            if merchant not in transactions or \
+               transactions[merchant] < amount:
+                return 0
+            else:
+                number_of_applications.append(
+                    transactions[merchant] // amount
+                )
+        
+        # the max number of times a rule can be applied to a transaction is 
+        #  limited by the number of times a req can be applied to any 
+        #  specific merchant within the transaction
+        return int(min(number_of_applications))
     
-    def _apply_rule(self, transactions: Dict[str, float], reqs: List[Tuple[str, int]]) -> int:
+    @staticmethod
+    def _apply_rule(
+        transactions: Dict[str, float],
+        reqs: List[Tuple[str, int]],
+        times: int = 1
+    ) -> int:
         """
         modifies transaction in place to decrement ammounts
         returns total decremented
+
+        * Expects that _rule_applicable(transactions, reqs, times)
+          has returned True
+
+        Args:
+            transactions -- a dict of parsed transactions 
+                          (same format as self._parsed_transactions)
+            reqs -- a list of requirements 
+                    (see DEFAULT_RULES[i]["Reqs"] above for format)
+            times -- the number of times the rule is applied
+        
+        Returns:
+            the total amount deducted from transaction total to apply the Rule
         """
         total = 0
         for merchant, amount in reqs:
-            transactions[merchant] -= amount
-            total += amount
+            transactions[merchant] -= amount * times
+            total += amount * times
 
         return total
 
@@ -240,7 +347,29 @@ class TransactionParser:
             bool -- whether we need to merge the other merchants 
                      values into 'other' or not
         """
-        return transactions[MerchantCode.SPORTCHECK.value] < 20
+        return MerchantCode.SPORTCHECK.value not in transactions or \
+            transactions[MerchantCode.SPORTCHECK.value] < 20
+
+    @staticmethod
+    def _merge_to_other(transactions: Dict[str, float]) -> int:
+        """
+        Merges all remaining transactions into the 'other'
+        category and returns the total from applying Rule 7
+
+        * requires a mechant_code of 'other' to be present in transactions
+
+        Args:
+            transactions -- a dict of parsed transactions 
+                          (same format as self._parsed_transactions)
+        Returns:
+            int -- amount earned from applying rule 7
+        """
+        for merchant, amount in transactions.items():
+            if merchant != MerchantCode.OTHER.value:
+                transactions[MerchantCode.OTHER.value] += amount
+        
+        # using int cast on floats in Python is the same as floor
+        return int(transactions[MerchantCode.OTHER.value])
 
 
 
@@ -265,5 +394,7 @@ TRY tricky WITHOUT TIMS CUS IT SEEMED LIKE IT BROKE
 
 """
 t.maximum_reward_for_month()
+t.maximum_reward_per_transaction()
+
 
 # print("rule applicable: ", t._rule_applicable(DEFAULT_RULES[0]["Reqs"]))
