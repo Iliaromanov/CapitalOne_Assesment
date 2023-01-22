@@ -31,6 +31,7 @@ Sample Request Body:
 }
 ```
 Sample Response:
+
 (the `max_reward_per_transaction` field provides the max reward points for transaction `i` at index `i - 1`; eg. the max reward points for T01 is 400 which is achieved through applying Rule 3 twice.)
 
 ```javascript
