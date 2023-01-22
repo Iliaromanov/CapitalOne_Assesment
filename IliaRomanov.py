@@ -334,9 +334,9 @@ class RewardPointsCalculator:
     def _must_merge_to_other(transactions: Dict[str, float]) -> bool:
         """
         This method is specific to the DEFAULT_RULES given in the assesment;
-        it checks if none of the rules other than Rule 7 can be applied
-        (if that is the case, then we must merge 'subway' and 'tim_hortons'
-         into the other category to be used as left over amount)
+        it checks if none of the rules other than Rule 7 can be applied.
+        (if that is the case, then we must merge all merchants
+         into the 'other' category to be used as left over amount)
 
         Args:
             transactions -- a dict of parsed transactions 
