@@ -132,14 +132,19 @@ class RewardPointsCalculator:
         self._parsed_transactions = transactions
 
 
-    def maximum_reward_per_transaction(self) -> List[Tuple[int, List[int]]]:
+    def maximum_reward_per_transaction(
+        self
+    )-> List[Tuple[int, Dict[str, List[int]]]]:
         """
         Compute max reward points per transaction based on
         self._raw_transactions
 
         Returns:
-            list of tuples -- (max_reward_for_transaction, [rules_used])
-                            index of each tuple denotes the transaction number
+            list of tuples -- (
+                    max_reward_for_transaction, 
+                    {"rules_used": [rules_used]}
+                )
+                index of each tuple denotes the transaction number
         """
         rewards = []
         for transaction in list(self._raw_transactions.values()):
@@ -155,7 +160,7 @@ class RewardPointsCalculator:
             # check if need to merge to 'other' for Rule 7
             if self._must_merge_to_other(parsed_transaction):
                 rule_7_reward = self._merge_to_other(parsed_transaction)
-                rewards.append((rule_7_reward, [7]))
+                rewards.append((rule_7_reward, {"rules_used": [7]}))
                 continue
 
             # iterate over all rules from highest reward to lowest
@@ -170,7 +175,7 @@ class RewardPointsCalculator:
                     rewards.append((
                         rule["Points"] * num_times_applicable,
                         # use rule number num_times_applicable times
-                        [rule_num + 1] * num_times_applicable
+                        {"rules_used": [rule_num + 1] * num_times_applicable}
                     ))
                     break
 
