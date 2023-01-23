@@ -195,10 +195,19 @@ class RewardPointsCalculator:
             tuple -- (max_reward: int, rules_used: List[int])
         """
 
-        # Will use the following logic (for DEFAULT_RULES):
-        #  Rule 1 > Rule 2 > 2*Rule 4 > Rule 3 > Rule 6 > Rule 7
+        # Will use the following order logic (for DEFAULT_RULES):
+        #  1. Rule 1 
+        #  2. 2xRule 4 
+        #  3. Rule 2
+        #  4. Rule 4 + 2xRule 6
+        #  5. 3xRule 6
+        #  6. Rule 4
+        #  7. Rule 6
+        #  8. Rule 7
         #  Rule 5 should never be used since Rule 6 + Rule 7 can be used
         #   to produce bigger reward instead
+        #  Rule 3 should never be used since 3 x Rule 6 can
+        #   produce bigger reward
         total_remainig = self._total_transaction_amount
         transactions = self._parsed_transactions.copy()
         rules_used = []
@@ -220,40 +229,57 @@ class RewardPointsCalculator:
             # Rule 1
             if self._rule_applicable(transactions, self._rules[0]["Reqs"]):
                 reward += self._rules[0]["Points"]
-                rules_used.append(1)
+                rules_used = rules_used + [1]
                 total_remainig -= self._apply_rule(
                     transactions, self._rules[0]["Reqs"]
-                )
-                continue
-            # Rule 2
-            elif self._rule_applicable(transactions, self._rules[1]["Reqs"]):
-                reward += self._rules[1]["Points"]
-                rules_used.append(2)
-                total_remainig -= self._apply_rule(
-                    transactions, self._rules[1]["Reqs"]
                 )
                 continue
             # 2 x Rule 4
             elif self._rule_applicable(transactions, self._rules[3]["Reqs"]) == 2:
                 reward += self._rules[3]["Points"] * 2
-                rules_used.append(4)
-                rules_used.append(4)
+                rules_used = rules_used + [4, 4]
                 total_remainig -= self._apply_rule(
                     transactions, self._rules[3]["Reqs"], 2
                 )
                 continue
-            # Rule 3 
-            elif self._rule_applicable(transactions, self._rules[2]["Reqs"]):
-                reward += self._rules[2]["Points"]
-                rules_used.append(3)
+            # Rule 2
+            elif self._rule_applicable(transactions, self._rules[1]["Reqs"]):
+                reward += self._rules[1]["Points"]
+                rules_used = rules_used + [2]
                 total_remainig -= self._apply_rule(
-                    transactions, self._rules[2]["Reqs"]
+                    transactions, self._rules[1]["Reqs"]
+                )
+                continue
+            # Rule 4 + 2 * Rule 6
+            elif self._rule_applicable(transactions, self._rules[3]["Reqs"]) \
+             and self._rule_applicable(transactions, self._rules[5]["Reqs"]) == 2:
+                reward += self._rules[3]["Points"] + self._rules[5]["Points"] * 2
+                rules_used = rules_used + [4, 6, 6]
+                total_remainig -= self._apply_rule(
+                    transactions, self._rules[3]["Reqs"]
+                )
+                total_remainig -= self._apply_rule(
+                    transactions, self._rules[5]["Reqs"], 2
+                )
+            # 3 * Rule 6
+            elif self._rule_applicable(transactions, self._rules[5]["Reqs"]) == 3:
+                reward += self._rules[5]["Points"] * 3
+                rules_used = rules_used + [6, 6, 6]
+                total_remainig -= self._apply_rule(
+                    transactions, self._rules[5]["Reqs"], 3
+                )
+            # Rule 4
+            elif self._rule_applicable(transactions, self._rules[3]["Reqs"]):
+                reward += self._rules[3]["Points"]
+                rules_used = rules_used + [4]
+                total_remainig -= self._apply_rule(
+                    transactions, self._rules[3]["Reqs"]
                 )
                 continue
             # Rule 6
             elif self._rule_applicable(transactions, self._rules[5]["Reqs"]):
                 reward += self._rules[5]["Points"]
-                rules_used.append(6)
+                rules_used = rules_used + [6]
                 total_remainig -= self._apply_rule(
                     transactions, self._rules[5]["Reqs"]
                 )
