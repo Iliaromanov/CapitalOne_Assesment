@@ -9,7 +9,7 @@ The `transactionParserCDKApp` directory contains the AWS CDK (infrastructure as 
 (I have a copy of the code in `IliaRomanov.py` in  `transactionParserCDKApp/lambda/rewardPointsCalculator/rewardPointsCalculator.py` for the lambda handler to import; the `IliaRomanov.py` is just there to make it easier for you to review my code for the main logic of the assesment solution)
 
 ## API
-I deployed an AWS Lambda + API Gateway based API to accept HTTP POST requests providing a dictionary of transactions for a month in the format specified by the assesment documentation and return max reward points for the month and max reward points per transaction information.
+I deployed an AWS Lambda + API Gateway based API to accept HTTP POST requests providing a dictionary of transactions for a month in the format specified by the assesment documentation and return a response containing the max reward points for the month and max reward points per transaction information.
 
 URL: `https://ycyx8q4m03.execute-api.us-east-2.amazonaws.com/prod/`
 
