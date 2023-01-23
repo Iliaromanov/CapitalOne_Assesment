@@ -40,99 +40,67 @@ Sample Response:
         [
             400,
             {
-                "rules_used": [
-                    3,
-                    3
-                ]
+                "rules_used": [3,3]
             }
         ],
         [
             200,
             {
-                "rules_used": [
-                    3
-                ]
+                "rules_used": [3]
             }
         ],
         [
             3,
             {
-                "rules_used": [
-                    7
-                ]
+                "rules_used": [7]
             }
         ],
         [
             12,
             {
-                "rules_used": [
-                    7
-                ]
+                "rules_used": [7]
             }
         ],
         [
             21,
             {
-                "rules_used": [
-                    7
-                ]
+                "rules_used": [7]
             }
         ],
         [
             22,
             {
-                "rules_used": [
-                    7
-                ]
+                "rules_used": [7]
             }
         ],
         [
             18,
             {
-                "rules_used": [
-                    7
-                ]
+                "rules_used": [7]
             }
         ],
         [
             21,
             {
-                "rules_used": [
-                    7
-                ]
+                "rules_used": [7]
             }
         ],
         [
             225,
             {
-                "rules_used": [
-                    6,
-                    6,
-                    6
-                ]
+                "rules_used": [6,6,6]
             }
         ],
         [
             13,
             {
-                "rules_used": [
-                    7
-                ]
+                "rules_used": [7]
             }
         ]
     ],
     "rewards_for_month": {
-        "max_reward": 1472,
-        "rules_used": [
-            1,
-            2,
-            3,
-            3,
-            6,
-            6,
-            6,
-            7
-        ]
+        "max_reward": 1657,
+        "rules_used": [1,2,4,6,6,6,6,6,6,6,6,6,7]
     }
 }
 ```
