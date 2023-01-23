@@ -1,5 +1,5 @@
 # CapitalOne_Assesment
-My implementation of the Credit Card Reward Points Calculator Technical Assesment for Capital One
+My implementation of the Credit Card Reward Points Calculator Technical Assesment for Capital One. I deployed an API for my code using AWS Lambda and API Gateway so please read through at least the API section for info on how to test my code.
 
 ## File Structure
 I wrote a class - `RewardPointsCalculator` - that implements methods to find the max reward points for the month and max reward points per transaction. This class is located in `IliaRomanov.py` and the methods are `maximum_reward_for_month` and `maximum_reward_per_transaction` respectively.
